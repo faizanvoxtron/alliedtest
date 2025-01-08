@@ -1,0 +1,52 @@
+name: Create Pull Request and Notify
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  auto-pull-request:
+    name: PullRequestAction
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Create Pull Request
+        id: create_pr
+        uses: diillson/auto-pull-request@v1.0.1
+        with:
+          source_branch: ""                                 # If blank, default: triggered branch
+          destination_branch: "main"                        # If blank, default: master
+          pr_title: "Pulling ${{ github.ref }} into main"   # Title of pull request
+          pr_body: |                                        # Full markdown support, requires pr_title to be set
+            :crown: **An automated PR**
+            _This pull request has been created automatically by the workflow._
+            Please review the changes and merge if acceptable.
+          pr_assignee: "vox-global"                   # Your GitHub username
+          pr_label: "auto-pr"                               # Comma-separated list (no spaces)
+          pr_allow_empty: true                              # Creates pull request even if there are no changes
+          github_token: ${{ secrets.TOKEN }}
+
+      - name: Get Repository Info
+        id: repo_info
+        run: |
+          echo "::set-output name=repo::$(echo $GITHUB_REPOSITORY)"
+          echo "::set-output name=pr_number::$(jq -r '.number' /tmp/pull-request.json)"
+
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.yandex.com
+          server_port: 465
+          username: deployment-alerts@voxtrongroup.com
+          password: DevOps123$%67
+          subject: "Approval required for pull request #${{ steps.create_pr.outputs.pull-request-number }}"
+          body: |
+            A new pull request #${{ steps.create_pr.outputs.pull-request-number }} has been created for branch `${{ github.ref }}`.
+            Please review and approve the changes.
+            You can view and approve the pull request [here](https://github.com/${{ steps.repo_info.outputs.repo }}/pull/${{ steps.repo_info.outputs.pr_number }}).
+          to: "harsham@voxtrongroup.com"
+          from: "deployment-alerts@voxtrongroup.com"
+
