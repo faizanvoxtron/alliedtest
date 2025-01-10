@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alliedipfirm-web
+  labels:
+    app: alliedipfirm-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alliedipfirm-web
+  template:
+    metadata:
+      labels:
+        app: alliedipfirm-web
+    spec:
+      containers:
+        - name: alliedipfirm-web
+          image: voxtrondocker/alliedipfirm:latest
+          ports:
+            - containerPort: 80
+          imagePullPolicy: Always
